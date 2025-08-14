@@ -1,4 +1,4 @@
-// Minimal working build.gradle for JitPack AAR-only distribution
+// Minimal build.gradle to trick JitPack into using a pre-built JAR
 plugins {
     id 'base'
     id 'maven-publish'
@@ -7,20 +7,20 @@ plugins {
 // === Critical Configuration ===
 publishing {
     publications {
-        aar(MavenPublication) {
+        jar(MavenPublication) {  // Changed from 'aar' to 'jar'
             groupId 'com.github.philzorin'
             artifactId 'toast'
             version '1.0.1'
-            artifact file("toast.aar")
+            artifact file("toast.jar")  // Replace toast.aar with toast.jar
             
-            // Generate minimal POM with dependencies
+            // Generate minimal POM with dependencies (if needed)
             pom.withXml {
                 def deps = asNode().appendNode('dependencies')
-                // Add your AAR's dependencies here:
+                // Example: Add dependencies if your JAR needs them
                 def dep = deps.appendNode('dependency')
-                dep.appendNode('groupId', 'androidx.appcompat')
-                dep.appendNode('artifactId', 'appcompat')
-                dep.appendNode('version', '1.7.1')
+                dep.appendNode('groupId', 'org.jetbrains.kotlin')
+                dep.appendNode('artifactId', 'kotlin-stdlib')
+                dep.appendNode('version', '1.8.0')
             }
         }
     }
