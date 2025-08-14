@@ -1,34 +1,33 @@
-// Minimal build.gradle to trick JitPack into using pre-built AAR
+// Minimal build script to force JitPack to use pre-built AAR
 plugins {
-    id 'java' // Lightweight alternative to com.android.library
+    id 'base' // Lightest possible plugin
+    id 'maven-publish' // Required for publishing override
 }
 
-// === Critical: Force JitPack to use your AAR ===
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                artifact file("toast.aar")  
-                groupId 'com.github.philzorin'
-                artifactId 'toast'
-                version '1.0.1'
-                pom.withXml {
-                    // Minimal POM dependencies (if your AAR needs them)
-                    def dependenciesNode = asNode().appendNode('dependencies')
-                    // Example: Add androidx if needed
-                    def depNode = dependenciesNode.appendNode('dependency')
-                    depNode.appendNode('groupId', 'androidx.appcompat')
-                    depNode.appendNode('artifactId', 'appcompat')
-                    depNode.appendNode('version', '1.7.1')
-                }
+// === Critical JitPack Workaround ===
+publishing {
+    publications {
+        aar(MavenPublication) {
+            groupId = 'com.github.philzorin'
+            artifactId = 'toast'
+            version = '1.0.1'
+            artifact file("toast.aar") // Your pre-built AAR
+            pom.withXml {
+                // Add dependencies if your AAR requires them
+                def deps = asNode().appendNode('dependencies')
+                // Example for androidx:
+                def dep = deps.appendNode('dependency')
+                dep.appendNode('groupId', 'androidx.appcompat')
+                dep.appendNode('artifactId', 'appcompat')
+                dep.appendNode('version', '1.7.1')
             }
         }
     }
-    
-    // Disable all non-essential tasks
-    tasks.all { task ->
-        if (!task.name.startsWith('publish')) {
-            task.enabled = false
-        }
+}
+
+// Disable all tasks except what's absolutely needed
+tasks.all { task ->
+    if (!task.name.startsWith('publish')) {
+        task.enabled = false
     }
 }
