@@ -1,33 +1,37 @@
-// Minimal build script to force JitPack to use pre-built AAR
+// Minimal build.gradle to force JitPack to accept pre-built AAR
 plugins {
     id 'base' // Lightest possible plugin
-    id 'maven-publish' // Required for publishing override
 }
 
-// === Critical JitPack Workaround ===
-publishing {
-    publications {
-        aar(MavenPublication) {
-            groupId = 'com.github.philzorin'
-            artifactId = 'toast'
-            version = '1.0.1'
-            artifact file("toast.aar") // Your pre-built AAR
-            pom.withXml {
-                // Add dependencies if your AAR requires them
-                def deps = asNode().appendNode('dependencies')
-                // Example for androidx:
-                def dep = deps.appendNode('dependency')
-                dep.appendNode('groupId', 'androidx.appcompat')
-                dep.appendNode('artifactId', 'appcompat')
-                dep.appendNode('version', '1.7.1')
-            }
-        }
-    }
+// === Critical Workaround ===
+configurations.create("default")
+artifacts {
+    "default"(file('toast.aar')) // Directly reference your AAR
 }
 
-// Disable all tasks except what's absolutely needed
+// Disable all tasks to prevent building
 tasks.all { task ->
-    if (!task.name.startsWith('publish')) {
-        task.enabled = false
+    task.enabled = false
+}
+
+// Create minimal POM file (optional but recommended)
+task createPom {
+    doLast {
+        new File("$buildDir/poms/pom-default.xml").text = """
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.github.philzorin</groupId>
+  <artifactId>toast</artifactId>
+  <version>1.0.1</version>
+  <packaging>aar</packaging>
+  <dependencies>
+    <dependency>
+      <groupId>androidx.appcompat</groupId>
+      <artifactId>appcompat</artifactId>
+      <version>1.7.1</version>
+    </dependency>
+  </dependencies>
+</project>
+"""
     }
 }
