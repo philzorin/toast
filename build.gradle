@@ -1,30 +1,33 @@
 // Minimal build.gradle to trick JitPack into using pre-built AAR
 plugins {
-    id 'com.android.library'  // Required for AAR recognition
+    id 'java' // Lightweight alternative to com.android.library
 }
 
-android {
-    namespace 'com.cebp.toast'  // Match your AAR's package
-    compileSdk 33  // Arbitrary (not used)
-}
-
-// === Critical Part: Force JitPack to use your AAR ===
+// === Critical: Force JitPack to use your AAR ===
 afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                // Point to your pre-built AAR
                 artifact file("toast.aar")  
                 groupId 'com.github.philzorin'
                 artifactId 'toast'
                 version '1.0.1'
+                pom.withXml {
+                    // Minimal POM dependencies (if your AAR needs them)
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    // Example: Add androidx if needed
+                    def depNode = dependenciesNode.appendNode('dependency')
+                    depNode.appendNode('groupId', 'androidx.appcompat')
+                    depNode.appendNode('artifactId', 'appcompat')
+                    depNode.appendNode('version', '1.7.1')
+                }
             }
         }
     }
     
-    // Disable all tasks except publishing
+    // Disable all non-essential tasks
     tasks.all { task ->
-        if (task.name != 'generateMetadataFileForReleasePublication') {
+        if (!task.name.startsWith('publish')) {
             task.enabled = false
         }
     }
