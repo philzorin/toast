@@ -1,46 +1,31 @@
-// This minimal build.gradle tricks JitPack into accepting pre-built AAR
+// Minimal build.gradle to trick JitPack into using pre-built AAR
 plugins {
-    id 'java' // Minimal plugin requirement
+    id 'com.android.library'  // Required for AAR recognition
 }
 
-// Disable all tasks except what JitPack needs
-tasks.whenTaskAdded { task ->
-    if (task.name != 'publishToMavenLocal' && task.name != 'build') {
-        task.enabled = false
-    }
+android {
+    namespace 'com.cebp.toast'  // Match your AAR's package
+    compileSdk 33  // Arbitrary (not used)
 }
 
-task build {
-    doLast {
-        // Copy your pre-built AAR to where JitPack expects it
-        copy {
-            from 'toast.aar'
-            into "$buildDir/libs"
-            rename 'toast.aar', "${project.name}-${version}.aar"
+// === Critical Part: Force JitPack to use your AAR ===
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                // Point to your pre-built AAR
+                artifact file("toast.aar")  
+                groupId 'com.github.philzorin'
+                artifactId 'toast'
+                version '1.0.1'
+            }
         }
-        println "[JitPack] Using pre-built AAR - no compilation needed"
     }
-}
-
-task publishToMavenLocal {
-    dependsOn build
-    doLast {
-        // Simulate Maven publish structure
-        def mavenDir = "$buildDir/repo/com/github/philzorin/toast/$version"
-        mkdir mavenDir
-        copy {
-            from "$buildDir/libs/toast-${version}.aar"
-            into mavenDir
+    
+    // Disable all tasks except publishing
+    tasks.all { task ->
+        if (task.name != 'generateMetadataFileForReleasePublication') {
+            task.enabled = false
         }
-        // Create minimal POM
-        new File("$mavenDir/toast-${version}.pom") << """
-<project>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.github.philzorin</groupId>
-  <artifactId>toast</artifactId>
-  <version>$version</version>
-  <packaging>aar</packaging>
-</project>
-"""
     }
 }
